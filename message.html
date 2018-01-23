@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Chat!</title>
+    <link rel="stylesheet" href="css/messageStyle.css" />
+</head>
+<body>
+    <a href="index.aspx">Exit Chat</a>
+    <center><img src="media/logo.jpg" alt="logo" style="height: 150px; width: 150px;"></center>
+    <center><b>Type your Message  </b></center>
+    <p></p>
+    <div class="container">
+        <center>
+            <input style="width: 300px;" type="text" id="message" /><br /><br />
+            <input type="button" id="sendmessage" value="Send" />
+        </center>
+        <input type="hidden" id="displayname" />
+        <ul class="center" id="discussion"></ul>
+    </div>
+
+    <script src="Scripts/jquery-1.6.4.min.js"></script>
+    <script src="Scripts/jquery.signalR-2.2.2.min.js"></script>
+    <script src="signalr/hubs"></script>
+    <script type="text/javascript">
+        $(function () {
+            //referenct the hub.
+            var chat = $.connection.chatHub;
+            //create a function that the hub can call to broadcast error message and refresh page.
+ 
+            chat.client.broadcastError = function (name, message) {
+                var encodedName = $('<div />').text(name).html();
+                var encodedMsg = $('<div />').text(message).html();
+
+
+                //add the error message to the page.
+                $('#discussion').append('<li><strong>' + encodedName + '</strong>:&nbsp;&nbsp;' + encodedMsg + '</li>' +
+                    '<p> Entered incorrect name. Refreshing page... Please enter correct name to chat</p>');
+
+                window.setTimeout(function () {
+
+                    // move back to message page so user can enter correct name
+                    window.location.href = "message.html";
+
+                }, 3000);
+
+            };
+
+            //broadcast message function
+            chat.client.broadcastMessage = function (name, message) {
+                //html encode display name and message.
+                var encodedName = $('<div />').text(name).html();
+                var encodedMsg = $('<div />').text(message).html();
+                
+                
+                //add the message to the page.
+                $('#discussion').append('<li><strong>' + encodedName + '</strong>:&nbsp;&nbsp;' + encodedMsg + '</li>');
+
+            };
+            //get the user name and store it to prepend to messages
+            $('#displayname').val(prompt('Enter your name: ', ''));
+           
+            
+            //set initial focus to message input box
+            $('#message').focus();
+            //Start the connection
+            $.connection.hub.start().done(function () {
+                $('#sendmessage').click(function () {
+                    //call the send method on the hub.
+                    chat.server.send($('#displayname').val(), $('#message').val());
+                    //clear text box and reset focus for next comment.
+                    $('#message').val('').focus();
+             
+                });
+            });
+
+        });
+    </script>
+
+</body>
+</html>
